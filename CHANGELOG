@@ -2,6 +2,24 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 1.2.3
+
+* Default to the system line ending when passed a GzipWriter object to wrap.
+  
+== 1.2.2
+
+* Worked around GzipReader's lack of a seek() method so we could still use
+  automatic row separator detection with them.
+  
+== 1.2.1
+
+* Worked around an odd incompatibility with the Regexps used to remove line
+  endings in some (seemingly rare) Ruby environments.
+* Made FasterCSV::lineno() writer aware.
+* Support Hashes in FasterCSV#<<(), by detecting headers when writing.
+* Added limited support for switching the quote character.
+* Refining Data and DateTime matching for built-in convertors.
+
 == 1.2.0
 
 * Added the FasterCSV::table() shortcut.

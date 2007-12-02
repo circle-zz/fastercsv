@@ -6,6 +6,7 @@
 #  Copyright 2005 Gray Productions. All rights reserved.
 
 require "test/unit"
+require "zlib"
 
 require "faster_csv"
 
@@ -57,6 +58,14 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
     assert_equal( ["1", "2", "3\n", "4", "5"],
                   FasterCSV.parse_line( %Q{1,2,"3\n",4,5\r\n},
                                         :row_sep => "\r\n") )
+  end
+  
+  def test_quote_char
+    TEST_CASES.each do |test_case|
+      assert_equal( test_case.last.map { |t| t.tr('"', "'") unless t.nil? },
+                    FasterCSV.parse_line( test_case.first.tr('"', "'"),
+                                          :quote_char => "'" ) )
+    end
   end
   
   def test_row_sep_auto_discovery
@@ -135,6 +144,34 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
     END_DATA
     parsed = FasterCSV.parse(data, :col_sep => "<=>")
     assert_equal([[nil, nil, "A", "B", "C"], ["1", "2", "3"]], parsed)
+  end
+  
+  def test_gzip_reader_bug_fix
+    zipped = nil
+    assert_nothing_raised(NoMethodError) do
+      zipped = FasterCSV.new(
+                 Zlib::GzipReader.open(
+                   File.join(File.dirname(__FILE__), "line_endings.gz")
+                 )
+               )
+    end
+    assert_equal("\r\n", zipped.instance_eval { @row_sep })
+  end
+  
+  def test_gzip_writer_bug_fix
+    file   = File.join(File.dirname(__FILE__), "temp.gz")
+    zipped = nil
+    assert_nothing_raised(NoMethodError) do
+      zipped = FasterCSV.new(Zlib::GzipWriter.open(file))
+    end
+    zipped << %w[one two three]
+    zipped << [1, 2, 3]
+    zipped.close
+    
+    assert( Zlib::GzipReader.open(file) { |f| f.read }.
+                             include?($INPUT_RECORD_SEPARATOR),
+            "@row_sep did not default" )
+    File.unlink(file)
   end
   
   def test_version
